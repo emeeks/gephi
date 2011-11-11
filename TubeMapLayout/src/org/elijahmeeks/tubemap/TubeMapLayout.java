@@ -46,6 +46,7 @@ import org.gephi.data.attributes.api.AttributeOrigin;
 import org.gephi.data.attributes.api.AttributeRow;
 import org.gephi.data.attributes.api.AttributeType;
 
+import org.gephi.ui.propertyeditor.NodeColumnNumbersEditor;
 
 /**
  *
@@ -65,6 +66,9 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
             private boolean useXY = false;
             private boolean logDistance = true;
             private String targetID = "";
+            private AttributeColumn xCoord;
+            private AttributeColumn yCoord;
+            private boolean suitableTarget = false;
 
             //////////////////
 
@@ -82,11 +86,8 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
 ///////////////////////////////////////////////////////
 
         AttributeModel attributeModel = ((AttributeController) Lookup.getDefault().lookup(AttributeController.class)).getModel();
-        GraphModel graphModel = ((GraphController) Lookup.getDefault().lookup(GraphController.class)).getModel();
-        
         GraphController gc = Lookup.getDefault().lookup(GraphController.class);
         
-        HierarchicalGraph graph = null;
         if (gc.getModel().getGraphVisible() instanceof DirectedGraph) {
             graph = graphModel.getHierarchicalDirectedGraphVisible();
         } else {
@@ -106,10 +107,11 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
         for (Node s : graph.getNodes()) {
             indicies.put(index, s);
             if (s.getAttributes().getValue("Label").equals(targetID)) {
+                suitableTarget = true;
                 targetNode = index;
                 if (useXY == false){
-                    centerX = Double.valueOf(s.getAttributes().getValue("XCOORD").toString());
-                    centerY = Double.valueOf(s.getAttributes().getValue("YCOORD").toString());
+                    centerX = Double.valueOf(s.getAttributes().getValue(xCoord.getTitle()).toString());
+                    centerY = Double.valueOf(s.getAttributes().getValue(yCoord.getTitle()).toString());
                 }
                 else {
                     centerX = Double.valueOf(s.getNodeData().x());
@@ -118,6 +120,8 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
             }
             index++;
         }
+        
+        if (suitableTarget == true){
 
                             AbstractShortestPathAlgorithm algorithm;
                     if (gc.getModel().getGraphVisible() instanceof DirectedGraph) {
@@ -148,27 +152,26 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                         double targetY = 999;
                                 
                 if (useXY == false){
-                        targetX = Double.valueOf(s.getAttributes().getValue("XCOORD").toString());
-                        targetY = Double.valueOf(s.getAttributes().getValue("YCOORD").toString());
+                        targetX = Double.valueOf(s.getAttributes().getValue(xCoord.getTitle()).toString());
+                        targetY = Double.valueOf(s.getAttributes().getValue(yCoord.getTitle()).toString());
                 }
                 else {
                     targetX = Double.valueOf(s.getNodeData().x());
                     targetY = Double.valueOf(s.getNodeData().y());
                 }
 
-                        double distanceFrom = distanceHash.get(s) * distanceScale;
+                        double distanceFrom = (distanceHash.get(s) / algorithm.getMaxDistance()) * distanceScale;
                         
                         if (logDistance == true) {
                             distanceFrom = Math.log(distanceHash.get(s))  * distanceScale;
                         }
                         
                         if(Double.isInfinite(distanceFrom)) {
-                            distanceFrom = distanceScale * distanceScale;
+                            distanceFrom = algorithm.getMaxDistance() * 2;
                         }
 
-                        
-                        double differenceX = targetX - centerX;
-                        double differenceY = targetY - centerY;
+                            double differenceX = targetX - centerX;
+                            double differenceY = targetY - centerY;
                         
                         //tranlsate latlong to pixels
                         
@@ -183,14 +186,28 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                         
                         s.getNodeData().setX((float) (differenceY));
                         s.getNodeData().setY((float) (differenceX));
+                        
+                        if (distanceHash.get(s) == 0){
+                            s.getNodeData().setX(0f);
+                            s.getNodeData().setY(0f);
+                        }
+
+                        
                     }
-        converged = true;
+        }
+                    suitableTarget = false;
+                    converged = true;
 
     }
 
     @Override
     public boolean canAlgo() {
-        return !converged;
+        if(useXY == false) {
+            return !converged && xCoord != null && yCoord != null;
+        }
+        else {
+            return !converged;
+        }
     }
 
     public void endAlgo() {
@@ -231,6 +248,21 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                     NbBundle.getMessage(getClass(), "TubeMap.logMode.desc"),
                     "getLogMode", "setLogMode"));
             
+            properties.add(LayoutProperty.createProperty(
+                    this, AttributeColumn.class,
+                    NbBundle.getMessage(getClass(), "TubeMap.xCoord.name"),
+                    null,
+                    NbBundle.getMessage(getClass(), "TubeMap.xCoord.desc"),
+                    "getXCoord", "setXCoord", NodeColumnNumbersEditor.class));
+
+            properties.add(LayoutProperty.createProperty(
+                    this, AttributeColumn.class,
+                    NbBundle.getMessage(getClass(), "TubeMap.yCoord.name"),
+                    null,
+                    NbBundle.getMessage(getClass(), "TubeMap.yCoord.desc"),
+                    "getYCoord", "setYCoord", NodeColumnNumbersEditor.class));
+            
+            
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -241,6 +273,23 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
     public void resetPropertiesValues() {
     }
 
+    public void setXCoord(AttributeColumn XCoord) {
+        this.xCoord = XCoord;
+    }
+
+    public AttributeColumn getXCoord() {
+        return this.xCoord;
+    }
+
+    public void setYCoord(AttributeColumn YCoord) {
+        this.yCoord = YCoord;
+    }
+
+    public AttributeColumn getYCoord() {
+        return this.yCoord;
+    }
+
+    
     public void setSize(Double size) {
         this.distanceScale = size;
     }
