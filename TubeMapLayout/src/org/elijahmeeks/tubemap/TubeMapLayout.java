@@ -179,7 +179,7 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                         
                         //imagine a distanceFrom value of 600 and an initial hypotenuse of 5 degrees (500)
                         
-                        double ratio = (distanceFrom / initialHypotenuse) + 1;
+                        double ratio = (distanceFrom / initialHypotenuse);
                         
                         differenceX = differenceX * ratio;
                         differenceY = differenceY * ratio;
