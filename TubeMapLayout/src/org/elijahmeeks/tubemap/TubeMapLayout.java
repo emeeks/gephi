@@ -133,8 +133,6 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                         algorithm = new DijkstraShortestPathAlgorithm(pgraph, indicies.get(targetNode));
                         algorithm.compute();
                     }
-
-                    System.out.println(algorithm.getMaxDistance());
                     
                     HashMap<Node, Double> distanceHash = new HashMap<Node, Double>();                    
                     distanceHash = algorithm.getDistances();
@@ -144,6 +142,7 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                         AttributeRow row = (AttributeRow) s.getNodeData().getAttributes();
                         if(Double.isInfinite(distanceHash.get(s))) {
                             row.setValue(distanceCol, -999);
+                            distanceHash.put(s, (algorithm.getMaxDistance() * 1.1));
                         }
                         else{
                             row.setValue(distanceCol, distanceHash.get(s));
@@ -160,6 +159,7 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                     targetY = Double.valueOf(s.getNodeData().y());
                 }
 
+                
                         double distanceFrom = (distanceHash.get(s) / algorithm.getMaxDistance()) * distanceScale;
                         
                         if (logDistance == true) {
