@@ -141,11 +141,11 @@ public class TubeMapLayout extends AbstractLayout implements Layout {
                     for (Node s : graph.getNodes()) {
                         AttributeRow row = (AttributeRow) s.getNodeData().getAttributes();
                         if(Double.isInfinite(distanceHash.get(s))) {
-                            row.setValue(distanceCol, -999);
+                            row.setValue(distanceCol, -999d);
                             distanceHash.put(s, (algorithm.getMaxDistance() * 1.1));
                         }
                         else{
-                            row.setValue(distanceCol, distanceHash.get(s));
+                            row.setValue(distanceCol, new Double (distanceHash.get(s)));
                         }
                         double targetX = 999;
                         double targetY = 999;
